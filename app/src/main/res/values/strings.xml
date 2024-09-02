@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">TaskCronometer</string>
+    <string name="back_button">Back</string>
+    <string name="save">Save</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="empty_home">You can add tasks with the add button below!</string>
+    <string name="task_name_req">Name*</string>
+    <string name="task_duration_req">Duration*:</string>
+    <string name="settings_button">Setting Button</string>
+    <string name="button_to_add_task">Button to add a task</string>
+    <string name="new_task_title">New Task</string>
+</resources>
