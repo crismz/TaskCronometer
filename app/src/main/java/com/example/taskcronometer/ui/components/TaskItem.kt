@@ -1,4 +1,4 @@
-package com.example.taskcronometer.ui.task
+package com.example.taskcronometer.ui.components
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +24,6 @@ import com.example.taskcronometer.data.Task
 import com.example.taskcronometer.ui.theme.Shapes
 import com.example.taskcronometer.ui.theme.TaskCronometerTheme
 
-//TODO(First: Make logic of timer)0
 //TODO(Second: Update UI with duration left overtime)
 //TODO(Third: Show when timer is on)
 //TODO(Show notification of timer)
@@ -33,10 +32,11 @@ import com.example.taskcronometer.ui.theme.TaskCronometerTheme
 fun TaskItem (
     task: Task,
     onDelete: () -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card (
-        onClick = {},
+        onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.primary
@@ -83,6 +83,6 @@ fun TaskItem (
 fun TaskItemPreview() {
     val task = Task(1,"Trabajar en el projecto TaskCronometer adasdasdassadasas", 63000, true)
     TaskCronometerTheme {
-        TaskItem(task, onDelete = {})
+        TaskItem(task, onDelete = {}, onClick = {})
     }
 }

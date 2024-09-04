@@ -30,7 +30,7 @@ import com.example.taskcronometer.R
 import com.example.taskcronometer.TaskCronometerTopAppBar
 import com.example.taskcronometer.data.Task
 import com.example.taskcronometer.ui.TaskCronometerAppViewModelProvider
-import com.example.taskcronometer.ui.task.TaskItem
+import com.example.taskcronometer.ui.components.TaskItem
 import com.example.taskcronometer.ui.navigation.NavigationDestination
 import com.example.taskcronometer.ui.theme.TaskCronometerTheme
 import kotlinx.coroutines.launch
@@ -76,6 +76,11 @@ fun HomeScreen(
                     viewModel.deleteTask(it)
                 }
             },
+            onClickTaskItem = {
+                coroutineScope.launch {
+                    viewModel.startResumeOrPauseTaskTimer(it)
+                }
+            },
             modifier = modifier.padding(innerPadding)
         )
     }
@@ -85,6 +90,7 @@ fun HomeScreen(
 private fun HomeBody(
     tasks: List<Task>,
     onDelete: (Task) -> Unit,
+    onClickTaskItem: (Task) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -101,6 +107,7 @@ private fun HomeBody(
             TaskList(
                 tasks = tasks,
                 onDelete = onDelete,
+                onClickTaskItem = onClickTaskItem,
                 modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.padding_small))
             )
         }
@@ -111,6 +118,7 @@ private fun HomeBody(
 private fun TaskList(
     tasks: List<Task>,
     onDelete: (Task) -> Unit,
+    onClickTaskItem: (Task) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -119,7 +127,8 @@ private fun TaskList(
         items(items = tasks, key = { it.id }) {task ->
             TaskItem(
                 task = task,
-                { onDelete(task) }
+                onDelete = { onDelete(task) },
+                onClick = { onClickTaskItem(task) }
             )
         }
     }
@@ -153,7 +162,8 @@ fun TaskListPreview() {
         Surface (color = MaterialTheme.colorScheme.background) {
             TaskList(
                 listOf(task,task50, task100),
-                onDelete = {}
+                onDelete = {},
+                onClickTaskItem = {}
             )
         }
     }
@@ -167,6 +177,7 @@ fun HomeBodyPreview() {
             HomeBody(
                 tasks = listOf(),
                 onDelete = { },
+                onClickTaskItem = {},
                 modifier = Modifier.padding(innerPadding)
             )
         }
