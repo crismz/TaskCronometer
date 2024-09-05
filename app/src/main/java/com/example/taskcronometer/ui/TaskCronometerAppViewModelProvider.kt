@@ -5,6 +5,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.taskcronometer.TaskCronometerApplication
+import com.example.taskcronometer.notification.NotificationWorker
 import com.example.taskcronometer.ui.home.HomeViewModel
 import com.example.taskcronometer.ui.task.TaskEntryViewModel
 

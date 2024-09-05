@@ -63,6 +63,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
 
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+
     // Room
     implementation(libs.androidx.room.runtime)
     annotationProcessor("androidx.room:room-compiler:${rootProject.extra["room_version"]}")

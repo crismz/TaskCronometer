@@ -78,7 +78,7 @@ fun HomeScreen(
             },
             onClickTaskItem = {
                 coroutineScope.launch {
-                    viewModel.startResumeOrPauseTaskTimer(it)
+                    viewModel.startTimerTask(it)
                 }
             },
             modifier = modifier.padding(innerPadding)

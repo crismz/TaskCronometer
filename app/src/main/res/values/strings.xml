@@ -10,4 +10,6 @@
     <string name="settings_button">Setting Button</string>
     <string name="button_to_add_task">Button to add a task</string>
     <string name="new_task_title">New Task</string>
+    <string name="tasks_running_channel">Tasks Running</string>
+    <string name="tasks_running_channel_description">All tasks running.</string>
 </resources>

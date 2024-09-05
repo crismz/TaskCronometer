@@ -243,7 +243,7 @@ private fun DataDuration(taskDetails: TaskDetails) {
         )
     } else {
         Text(
-            text = ParseTimeLeft.toHHMMSS(taskDetails.duration),
+            text = ParseTimeLeft.toHHMM(taskDetails.duration),
             style = MaterialTheme.typography.labelMedium
         )
     }
