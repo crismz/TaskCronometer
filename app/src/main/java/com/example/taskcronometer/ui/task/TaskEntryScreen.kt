@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -22,24 +20,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimeInput
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerLayoutType
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.taskcronometer.R
@@ -48,7 +39,6 @@ import com.example.taskcronometer.data.ParseTimeLeft
 import com.example.taskcronometer.ui.TaskCronometerAppViewModelProvider
 import com.example.taskcronometer.ui.navigation.NavigationDestination
 import com.example.taskcronometer.ui.theme.TaskCronometerTheme
-import kotlinx.coroutines.launch
 
 object TaskEntryDestination : NavigationDestination {
     override val route = "task_entry"
@@ -62,8 +52,6 @@ fun TaskEntryScreen(
     canNavigateBack: Boolean = true,
     viewModel: TaskEntryViewModel = viewModel(factory = TaskCronometerAppViewModelProvider.Factory)
 ) {
-    val coroutineScope = rememberCoroutineScope()
-
     Scaffold(
         topBar = {
             TaskCronometerTopAppBar(
@@ -77,14 +65,8 @@ fun TaskEntryScreen(
             taskUiState = viewModel.taskUiState,
             onTaskValueChange = viewModel::updateUiState,
             onSaveClick = {
-                // Note: If the user rotates the screen very fast, the operation may get cancelled
-                // and the item may not be saved in the Database. This is because when config
-                // change occurs, the Activity will be recreated and the rememberCoroutineScope will
-                // be cancelled - since the scope is bound to composition.
-                coroutineScope.launch {
-                    viewModel.saveTask()
-                    navigateBack()
-                }
+                viewModel.saveTask()
+                navigateBack()
             },
             modifier = Modifier
                 .padding(
@@ -221,7 +203,7 @@ private fun InputDurationRow(
             onDismiss = { selectDuration = false },
             onConfirm = {
                 onValueChange(taskDetails.copy(
-                    duration = ParseTimeLeft.toSeconds(
+                    duration = ParseTimeLeft.toMilliSeconds(
                         durationPickerState.hour,
                         durationPickerState.minute
                     )
@@ -236,7 +218,7 @@ private fun InputDurationRow(
 
 @Composable
 private fun DataDuration(taskDetails: TaskDetails) {
-    if (taskDetails.duration == 0) {
+    if (taskDetails.duration == 0L) {
         Text(
             text = "00:00",
             style = MaterialTheme.typography.labelMedium

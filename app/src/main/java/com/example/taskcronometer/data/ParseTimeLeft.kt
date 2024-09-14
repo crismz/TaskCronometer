@@ -8,21 +8,21 @@ import java.util.Locale
  */
 object ParseTimeLeft {
 
-    fun toSeconds(hour: Int, minute: Int, second: Int = 0): Int {
-        return hour * 3600 + minute * 60 + second
+    fun toMilliSeconds(hour: Int, minute: Int, second: Int = 0): Long {
+        return (hour * 3600 + minute * 60 + second) * 1000L
     }
 
-    fun toHHMM(seconds: Int): String {
-        val hours = seconds / 3600
-        val minutes = (seconds % 3600) / 60
+    fun toHHMM(milliSeconds: Long): String {
+        val hours = ((milliSeconds / 1000) / 3600)
+        val minutes = ((milliSeconds / 1000) % 3600) / 60
         return String.format(Locale.getDefault(),"%02d:%02d", hours, minutes)
     }
 
-    fun toHHMMSS(seconds: Int): String {
-        val hours = seconds / 3600
-        val minutes = (seconds % 3600) / 60
-        val secondsLeft = seconds % 60
-        return String.format(Locale.getDefault(),"%02d:%02d:%02d", hours, minutes, secondsLeft)
+    fun toHHMMSS(milliSeconds: Long): String {
+        val hours = ((milliSeconds / 1000) / 3600)
+        val minutes = ((milliSeconds / 1000) % 3600) / 60
+        val seconds = ((milliSeconds / 1000) % 3600) % 60
+        return String.format(Locale.getDefault(),"%02d:%02d:%02d", hours, minutes, seconds)
     }
 
 }

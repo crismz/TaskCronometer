@@ -4,8 +4,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.taskcronometer.data.Task
 import com.example.taskcronometer.data.TasksRepository
+import kotlinx.coroutines.launch
 
 
 /**
@@ -31,15 +33,17 @@ class TaskEntryViewModel(private val tasksRepository: TasksRepository): ViewMode
     /**
      * Inserts an [Task] in the Room database
      */
-    suspend fun saveTask() {
-        if (validateInput()) {
-            tasksRepository.insertTask(taskUiState.taskDetails.toTask())
+    fun saveTask() {
+        viewModelScope.launch {
+            if (validateInput()) {
+                tasksRepository.insertTask(taskUiState.taskDetails.toTask())
+            }
         }
     }
 
     private fun validateInput(uiState: TaskDetails = taskUiState.taskDetails): Boolean {
         return with(uiState) {
-            name.isNotBlank() && duration >= 60 && duration <= 86400
+            name.isNotBlank() && duration >= 60000 && duration <= 86400000
         }
     }
 }
@@ -55,7 +59,8 @@ data class TaskUiState(
 data class TaskDetails (
     val id: Int = 0,
     val name: String = "",
-    val duration: Int = 0,
+    val duration: Long = 0,
+    val remainingTime: Long = 0
 )
 
 
@@ -65,7 +70,9 @@ data class TaskDetails (
 fun TaskDetails.toTask(): Task = Task(
     id = id,
     name = name,
-    duration = duration
+    duration = duration,
+    // Just used when task created, so the remainingTime is the same as the duration
+    remainingTime = duration
 )
 
 /**
@@ -82,5 +89,6 @@ fun Task.toTaskUiState(isEntryValid: Boolean = false): TaskUiState = TaskUiState
 fun Task.toTaskDetails(): TaskDetails = TaskDetails(
     id = id,
     name = name,
-    duration = duration
+    duration = duration,
+    remainingTime = remainingTime
 )

@@ -24,19 +24,16 @@ import com.example.taskcronometer.data.Task
 import com.example.taskcronometer.ui.theme.Shapes
 import com.example.taskcronometer.ui.theme.TaskCronometerTheme
 
-//TODO(Second: Update UI with duration left overtime)
-//TODO(Third: Show when timer is on)
-//TODO(Show notification of timer)
-
 @Composable
 fun TaskItem (
     task: Task,
     onDelete: () -> Unit,
-    onClick: () -> Unit,
+    onStartTaskTimer: () -> Unit,
+    onPauseTaskTimer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card (
-        onClick = onClick,
+        onClick = if (task.paused) onStartTaskTimer else onPauseTaskTimer,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.primary
@@ -59,7 +56,7 @@ fun TaskItem (
                     .padding(end = dimensionResource(R.dimen.padding_medium))
             )
             Text(
-                text = ParseTimeLeft.toHHMMSS(task.duration),
+                text = ParseTimeLeft.toHHMMSS(task.remainingTime),
                 style = MaterialTheme.typography.displayLarge,
                 modifier = Modifier
                     .weight(2f)
@@ -81,8 +78,13 @@ fun TaskItem (
 @Preview
 @Composable
 fun TaskItemPreview() {
-    val task = Task(1,"Trabajar en el projecto TaskCronometer adasdasdassadasas", 63000, true)
+    val task = Task(
+        1,
+        "Trabajar en el projecto TaskCronometer adasdasdassadasas",
+        63000,
+        remainingTime = 63000,
+        true)
     TaskCronometerTheme {
-        TaskItem(task, onDelete = {}, onClick = {})
+        TaskItem(task, onDelete = {}, onStartTaskTimer = {}, onPauseTaskTimer = {})
     }
 }

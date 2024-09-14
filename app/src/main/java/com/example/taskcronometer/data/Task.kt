@@ -8,6 +8,7 @@ data class Task(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val name: String,
-    val duration: Int,
+    val duration: Long,
+    val remainingTime: Long,
     val paused: Boolean = true
 )

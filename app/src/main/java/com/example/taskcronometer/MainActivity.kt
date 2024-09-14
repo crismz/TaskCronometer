@@ -1,7 +1,12 @@
 package com.example.taskcronometer
 
+import android.app.AlarmManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -13,12 +18,12 @@ import androidx.core.content.ContextCompat
 import com.example.taskcronometer.ui.theme.TaskCronometerTheme
 
 class MainActivity : ComponentActivity() {
-    // we need notification permission to be able to display a notification for the foreground service
+
     private val notificationPermissionLauncher =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) {
-            // if permission was denied, the service can still run only the notification won't be visible
+
         }
 
     /**
@@ -26,15 +31,31 @@ class MainActivity : ComponentActivity() {
      */
     private fun checkAndRequestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)) {
+            when (ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.POST_NOTIFICATIONS)) {
                 android.content.pm.PackageManager.PERMISSION_GRANTED -> {
                     // permission already granted
                 }
 
                 else -> {
-                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    notificationPermissionLauncher.launch(
+                        android.Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
+        }
+    }
+
+    // TODO("Explain why set alarms, give the chance to refuse the alarms permission")
+    /**
+     * Check if the app can schedule exact alarms. If not, request the SCHEDULE_EXACT_ALARM permission
+      */
+    private fun checkAndRequestAlarmsPermission() {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+             !alarmManager.canScheduleExactAlarms()) {
+            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+            intent.setData(Uri.fromParts("package", packageName, null))
+            startActivity(intent)
         }
     }
 
@@ -51,5 +72,6 @@ class MainActivity : ComponentActivity() {
             }
         }
         checkAndRequestNotificationPermission()
+        checkAndRequestAlarmsPermission()
     }
 }

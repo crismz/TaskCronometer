@@ -5,9 +5,10 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.taskcronometer.TaskCronometerApplication
-import com.example.taskcronometer.notification.NotificationWorker
+import com.example.taskcronometer.utilities.NotificationHelper
 import com.example.taskcronometer.ui.home.HomeViewModel
 import com.example.taskcronometer.ui.task.TaskEntryViewModel
+import com.example.taskcronometer.utilities.TaskAlarmHelper
 
 /**
  * Provides Factory to create a instance of ViewModel for the entire TaskCronometer app
@@ -21,7 +22,15 @@ object TaskCronometerAppViewModelProvider {
 
         // Initializer for HomeViewModel
         initializer {
-            HomeViewModel(taskCronometerApplication().container.tasksRepository)
+            HomeViewModel(
+                tasksRepository = taskCronometerApplication().container.tasksRepository,
+                userPreferencesRepository = taskCronometerApplication().userPreferencesRepository,
+                timeValuesRepository = taskCronometerApplication().timeValuesRepository,
+                notificationHelper = NotificationHelper(
+                    context = taskCronometerApplication().applicationContext),
+                taskAlarmHelper = TaskAlarmHelper(
+                    context = taskCronometerApplication().applicationContext)
+            )
         }
     }
 }

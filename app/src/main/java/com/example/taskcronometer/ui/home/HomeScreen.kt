@@ -18,7 +18,6 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
@@ -33,7 +32,6 @@ import com.example.taskcronometer.ui.TaskCronometerAppViewModelProvider
 import com.example.taskcronometer.ui.components.TaskItem
 import com.example.taskcronometer.ui.navigation.NavigationDestination
 import com.example.taskcronometer.ui.theme.TaskCronometerTheme
-import kotlinx.coroutines.launch
 
 
 object HomeDestination: NavigationDestination {
@@ -49,7 +47,6 @@ fun HomeScreen(
 ) {
     val homeUiState by viewModel.homeUiState.collectAsState()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -68,18 +65,13 @@ fun HomeScreen(
         HomeBody(
             tasks = homeUiState.taskList,
             onDelete = {
-                // Note: If the user rotates the screen very fast, the operation may get cancelled
-                // and the item may not be deleted from the Database. This is because when config
-                // change occurs, the Activity will be recreated and the rememberCoroutineScope will
-                // be cancelled - since the scope is bound to composition.
-                coroutineScope.launch {
-                    viewModel.deleteTask(it)
-                }
+                viewModel.deleteTask(it)
             },
-            onClickTaskItem = {
-                coroutineScope.launch {
-                    viewModel.startTimerTask(it)
-                }
+            onStartTaskTimer = {
+                viewModel.startTimerTask(it)
+            },
+            onPauseTaskTimer = {
+                viewModel.pauseTimerTask(it)
             },
             modifier = modifier.padding(innerPadding)
         )
@@ -90,7 +82,8 @@ fun HomeScreen(
 private fun HomeBody(
     tasks: List<Task>,
     onDelete: (Task) -> Unit,
-    onClickTaskItem: (Task) -> Unit,
+    onStartTaskTimer: (Task) -> Unit,
+    onPauseTaskTimer: (Task) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -107,7 +100,8 @@ private fun HomeBody(
             TaskList(
                 tasks = tasks,
                 onDelete = onDelete,
-                onClickTaskItem = onClickTaskItem,
+                onStartTaskTimer = onStartTaskTimer,
+                onPauseTaskTimer = onPauseTaskTimer,
                 modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.padding_small))
             )
         }
@@ -118,7 +112,8 @@ private fun HomeBody(
 private fun TaskList(
     tasks: List<Task>,
     onDelete: (Task) -> Unit,
-    onClickTaskItem: (Task) -> Unit,
+    onStartTaskTimer: (Task) -> Unit,
+    onPauseTaskTimer: (Task) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -128,7 +123,8 @@ private fun TaskList(
             TaskItem(
                 task = task,
                 onDelete = { onDelete(task) },
-                onClick = { onClickTaskItem(task) }
+                onStartTaskTimer = { onStartTaskTimer(task) },
+                onPauseTaskTimer = { onPauseTaskTimer(task) }
             )
         }
     }
@@ -151,19 +147,19 @@ private fun FloatingActionButtonHomeScreen(
 @Preview
 @Composable
 fun TaskListPreview() {
-    val task = Task(1, "Trabajar en el projecto TaskCronometer", 63000, true)
+    val task = Task(1, "Trabajar en el projecto TaskCronometer",
+        63000, 63000,true)
     val task50 = Task(2, "50 caracteres aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        63000,
-        true)
+        63000, 63000,true)
     val task100 = Task(3,"100 caracteres aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbfdlkgjdfkljgkfdjkljwklwalkjzjlwkljkdlsas",
-        63000,
-        true)
+        63000, 63000,true)
     TaskCronometerTheme {
         Surface (color = MaterialTheme.colorScheme.background) {
             TaskList(
                 listOf(task,task50, task100),
                 onDelete = {},
-                onClickTaskItem = {}
+                onStartTaskTimer = {},
+                onPauseTaskTimer = {}
             )
         }
     }
@@ -177,7 +173,8 @@ fun HomeBodyPreview() {
             HomeBody(
                 tasks = listOf(),
                 onDelete = { },
-                onClickTaskItem = {},
+                onStartTaskTimer = {},
+                onPauseTaskTimer = {},
                 modifier = Modifier.padding(innerPadding)
             )
         }
