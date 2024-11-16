@@ -66,11 +66,14 @@ dependencies {
     // Datastore
     implementation(libs.androidx.datastore.preferences)
 
+    // Moshi
+    implementation(libs.moshi)
+
     // Room
     implementation(libs.androidx.room.runtime)
     annotationProcessor("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
-    implementation("androidx.room:room-ktx:${rootProject.extra["room_version"]}")
+    implementation(libs.androidx.room.ktx)
 
 
     testImplementation(libs.junit)

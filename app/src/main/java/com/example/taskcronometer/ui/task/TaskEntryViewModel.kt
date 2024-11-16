@@ -7,7 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.taskcronometer.data.Task
 import com.example.taskcronometer.data.TasksRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Date
 
 
 /**
@@ -22,19 +24,33 @@ class TaskEntryViewModel(private val tasksRepository: TasksRepository): ViewMode
         private  set
 
     /**
-     * Updates the [taskUiState] with the value provided in the argument. This method also triggers
-     * a validation for input values.
+     * Updates the [taskDetails] of [taskUiState] with the value provided in the argument.
+     * This method also triggers a validation for input values.
      */
-    fun updateUiState(taskDetails: TaskDetails) {
+    fun updateUiStateTaskDetails(taskDetails: TaskDetails) {
         taskUiState =
-            TaskUiState(taskDetails = taskDetails, isEntryValid = validateInput(taskDetails))
+            TaskUiState(
+                taskDetails = taskDetails,
+                isEntryValid = validateInput(taskDetails),
+                selectDuration = taskUiState.selectDuration)
+    }
+
+    /**
+     * Updates the [selectDuration] of [taskUiState] with the value provided in the argument.
+     */
+    fun updateUiStateSelectDuration(selectDuration: Boolean) {
+        taskUiState =
+            TaskUiState(
+                taskDetails = taskUiState.taskDetails,
+                isEntryValid = taskUiState.isEntryValid,
+                selectDuration = selectDuration)
     }
 
     /**
      * Inserts an [Task] in the Room database
      */
     fun saveTask() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             if (validateInput()) {
                 tasksRepository.insertTask(taskUiState.taskDetails.toTask())
             }
@@ -53,14 +69,15 @@ class TaskEntryViewModel(private val tasksRepository: TasksRepository): ViewMode
  */
 data class TaskUiState(
     val taskDetails: TaskDetails = TaskDetails(),
-    val isEntryValid: Boolean = false
+    val isEntryValid: Boolean = false,
+    val selectDuration: Boolean = false
 )
 
 data class TaskDetails (
     val id: Int = 0,
     val name: String = "",
     val duration: Long = 0,
-    val remainingTime: Long = 0
+    val remainingTime: Long = 0,
 )
 
 
@@ -71,8 +88,8 @@ fun TaskDetails.toTask(): Task = Task(
     id = id,
     name = name,
     duration = duration,
-    // Just used when task created, so the remainingTime is the same as the duration
-    remainingTime = duration
+    lastTimePaused = Date().time,
+    lastTimeResumed = 0
 )
 
 /**
@@ -80,7 +97,8 @@ fun TaskDetails.toTask(): Task = Task(
  */
 fun Task.toTaskUiState(isEntryValid: Boolean = false): TaskUiState = TaskUiState(
     taskDetails = this.toTaskDetails(),
-    isEntryValid = isEntryValid
+    isEntryValid = isEntryValid,
+    selectDuration = false
 )
 
 /**
@@ -89,6 +107,5 @@ fun Task.toTaskUiState(isEntryValid: Boolean = false): TaskUiState = TaskUiState
 fun Task.toTaskDetails(): TaskDetails = TaskDetails(
     id = id,
     name = name,
-    duration = duration,
-    remainingTime = remainingTime
+    duration = duration
 )

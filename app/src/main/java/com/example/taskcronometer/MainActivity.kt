@@ -1,12 +1,14 @@
 package com.example.taskcronometer
 
 import android.app.AlarmManager
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -45,7 +47,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // TODO("Explain why set alarms, give the chance to refuse the alarms permission")
     /**
      * Check if the app can schedule exact alarms. If not, request the SCHEDULE_EXACT_ALARM permission
       */
@@ -53,14 +54,35 @@ class MainActivity : ComponentActivity() {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
              !alarmManager.canScheduleExactAlarms()) {
-            val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-            intent.setData(Uri.fromParts("package", packageName, null))
-            startActivity(intent)
+
+            // Show a dialog explaining why the app needs the permission
+            AlertDialog.Builder(this).apply {
+                setTitle("Permission Required")
+                setMessage(
+                    "This app requires the ability to schedule exact alarms for reminders. " +
+                    "This ensures accuracy. You can decline this permission, " +
+                    "but certain features may not work as intended."
+                )
+                setPositiveButton("Grant Permission") { _, _ ->
+                    val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                    intent.data = Uri.fromParts("package", packageName, null)
+                    startActivity(intent)
+                }
+                setNegativeButton("No, Thanks") { dialog, _ ->
+                    dialog.dismiss()
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Exact alarm scheduling may not work without this permission.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }.show()
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         enableEdgeToEdge()
         setContent {
             TaskCronometerTheme {
@@ -71,7 +93,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
         checkAndRequestNotificationPermission()
         checkAndRequestAlarmsPermission()
     }
+
 }

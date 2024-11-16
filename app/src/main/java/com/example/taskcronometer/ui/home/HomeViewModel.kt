@@ -1,24 +1,24 @@
 package com.example.taskcronometer.ui.home
 
 
+import android.os.CountDownTimer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.taskcronometer.data.Task
 import com.example.taskcronometer.data.TasksRepository
-import com.example.taskcronometer.data.TimeValuesRepository
 import com.example.taskcronometer.data.UserPreferencesRepository
 import com.example.taskcronometer.utilities.NotificationHelper
 import com.example.taskcronometer.utilities.TaskAlarmHelper
-import kotlinx.coroutines.delay
+import com.example.taskcronometer.utilities.TimeHelper
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
-
-// TODO("See if there is another way less consuming of resources to do the timers. Check OnSTOP on Activity")
 
 /**
  * ViewModel to manage tasks created.
@@ -26,7 +26,6 @@ import java.util.Date
 class HomeViewModel(
     private val tasksRepository: TasksRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val timeValuesRepository: TimeValuesRepository,
     private val notificationHelper: NotificationHelper,
     private val taskAlarmHelper: TaskAlarmHelper
 ): ViewModel() {
@@ -42,43 +41,62 @@ class HomeViewModel(
                 initialValue = HomeUiState()
             )
 
+    /**
+     * MutableStateFlow to hold timers (task ID to running time).
+     * Used for showing the time in the UI.
+     */
+    private val _timers = MutableStateFlow<Map<Int, Long>>(emptyMap())
+    val timers: StateFlow<Map<Int, Long>> = _timers.asStateFlow()
+
+    /**
+     * MutableMap to hold the CountDownTimers (task ID to CountDownTimer)
+     * Used for calculate the timer of each task.
+     */
+    private val countDownTimers: MutableMap<Int, CountDownTimer> = mutableMapOf()
+
     init {
-        notificationHelper.setUpNotificationChannels()
-        updateTimersAfterAppOpened()
+        viewModelScope.launch {
+            notificationHelper.setUpNotificationChannels()
+
+            // Update Timers on database
+            updateTimersOnDatabase()
+        }
     }
 
     /**
-     *  Start Timer of task, update the database with paused = false, post Notification
-     *  and call updateTimer
+     *  Start Timer of task, update the database with paused = false, post Notification,
+     *  set Alarm and call updateTimer
      */
     fun startTimerTask(task: Task) {
         viewModelScope.launch {
+            updateTimer(task)
+
             tasksRepository.updateTask(
                 Task(
                     id = task.id,
                     name = task.name,
                     duration = task.duration,
-                    remainingTime = task.remainingTime,
-                    paused = false
+                    timeRunning = task.timeRunning,
+                    paused = false,
+                    lastTimeResumed = Date().time,
+                    lastTimePaused = task.lastTimePaused
                 )
             )
 
-            // Remaining time minus one second to avoid showing on the notification negative numbers
-            taskAlarmHelper.setTaskAlarm(
-                task.id,
-                task.name,
-                (task.remainingTime - 1) * 1000L
-            )
-
-            delay(100)
+            if (task.timeRunning < task.duration) {
+                // Remaining time minus one second to avoid showing on the notification negative numbers
+                taskAlarmHelper.setTaskAlarm(
+                    task.id,
+                    task.name,
+                    ((task.duration - task.timeRunning) - 1)
+                )
+            }
 
             notificationHelper.postNotification(
                 taskId = task.id,
                 taskName = task.name,
-                remainingTime = task.remainingTime
+                timeRunning = task.timeRunning
             )
-
-            updateTimer(task)
         }
     }
 
@@ -87,16 +105,27 @@ class HomeViewModel(
      */
     fun pauseTimerTask(task: Task) {
         viewModelScope.launch {
+            countDownTimers[task.id]?.cancel()
+
+            val now = Date().time
+
+            val actualTimeRunning = TimeHelper.obtainActualTimeRunning(
+                now,
+                task.timeRunning,
+                task.lastTimeResumed
+            )
+
             tasksRepository.updateTask(
                 Task(
                     id = task.id,
                     name = task.name,
                     duration = task.duration,
-                    remainingTime = task.remainingTime,
-                    paused = true
+                    timeRunning = actualTimeRunning,
+                    paused = true,
+                    lastTimeResumed = task.lastTimeResumed,
+                    lastTimePaused = now
                 )
             )
-
             taskAlarmHelper.cancelTaskAlarm(task.id)
 
             notificationHelper.deleteNotification(task.id)
@@ -109,53 +138,59 @@ class HomeViewModel(
     fun deleteTask(task: Task) {
         viewModelScope.launch {
             tasksRepository.deleteTask(task)
-            taskAlarmHelper.cancelTaskAlarm(task.id)
-            notificationHelper.deleteNotification(task.id)
         }
+        taskAlarmHelper.cancelTaskAlarm(task.id)
+        notificationHelper.deleteNotification(task.id)
     }
 
     private fun updateTimer(task: Task) {
-        var remainingTime = task.remainingTime
+        var time = task.timeRunning
+        var remainingTime = Long.MAX_VALUE
         val id = task.id
-        val name = task.name
-        val duration = task.duration
-        // TODO("Chequear cuanto sobra de milisegundos y esperar esa cantidad de
-        //  tiempo antes de entrar al while")
-        viewModelScope.launch {
-            while(homeUiState.value.taskList.find { it.id == id }?.paused == false &&
-            remainingTime > 0) {
-                remainingTime -= 1000
-                val updateTask = Task(id, name, duration, remainingTime, false)
-                viewModelScope.launch {
-                    tasksRepository.updateTask(updateTask)
-                    timeValuesRepository.saveTimeAppClosed(Date().time)
-                }
-                delay(1000)
 
-            }
+        // TODO (Add an option to decide if the timer is paused when it completes)
+
+        viewModelScope.launch {
+            countDownTimers[id] = object :CountDownTimer(remainingTime, 1000) {
+
+                override fun onTick(millisUntilFinished: Long) {
+                    time += (remainingTime - millisUntilFinished)
+                    _timers.value = _timers.value.toMutableMap().apply {
+                        this[id] = time
+                    }
+                    remainingTime = millisUntilFinished
+                }
+
+                override fun onFinish() {
+                    pauseTimerTask(task)
+                }
+            }.start()
         }
     }
 
-    // TODO("Corregir error de tiempo cuando se reabre la app.
-    //  Ver de utilizar una variable que guarde el tiempo que fue despausada la tarea")
-    private fun updateTimersAfterAppOpened() {
-        viewModelScope.launch {
-            homeUiState.map { it.taskList }.first { it.isNotEmpty() }
-            for (task in homeUiState.value.taskList) {
-                if (!task.paused && task.remainingTime > 0) {
-                    val timePass: Long = (Date().time - timeValuesRepository.timeAppClosed.first())
-                    // Add a second to achieve real time
-                    val remainingTime: Long = (task.remainingTime - timePass) + 500
-                    val updateTask = Task(
-                        task.id,
-                        task.name,
-                        task.duration,
-                        if (remainingTime > 0) remainingTime else 0,
-                        false
-                    )
-                    tasksRepository.updateTask(updateTask)
-                    updateTimer(updateTask)
-                }
+    private suspend fun updateTimersOnDatabase() {
+        val taskList: List<Task> =  tasksRepository.getAllTasksStream().first()
+
+        for (task in taskList) {
+            if (!task.paused) {
+                val now = Date().time
+                val actualTime = TimeHelper.obtainActualTimeRunning(
+                    now,
+                    task.timeRunning,
+                    task.lastTimeResumed
+                )
+
+                val updateTask = Task(
+                    id = task.id,
+                    name = task.name,
+                    duration = task.duration,
+                    timeRunning = actualTime,
+                    paused = false,
+                    lastTimeResumed = now,
+                    lastTimePaused = task.lastTimePaused
+                )
+                tasksRepository.updateTask(updateTask)
+                updateTimer(updateTask)
             }
         }
     }
@@ -172,4 +207,3 @@ class HomeViewModel(
 data class HomeUiState(
     val taskList: List<Task> = listOf()
 )
-

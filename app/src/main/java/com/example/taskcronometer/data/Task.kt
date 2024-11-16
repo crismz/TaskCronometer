@@ -9,6 +9,8 @@ data class Task(
     val id: Int = 0,
     val name: String,
     val duration: Long,
-    val remainingTime: Long,
-    val paused: Boolean = true
+    val timeRunning: Long = 0,
+    val paused: Boolean = true,
+    val lastTimePaused: Long,
+    val lastTimeResumed: Long
 )

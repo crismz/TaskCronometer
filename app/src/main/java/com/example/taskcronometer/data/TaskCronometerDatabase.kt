@@ -10,7 +10,7 @@ import androidx.room.RoomDatabase
 /**
  * Database class with a singleton Instance object.
  */
-@Database(entities = [Task::class], version = 1, exportSchema = false)
+@Database(entities = [Task::class], version = 4, exportSchema = false)
 abstract class TaskCronometerDatabase : RoomDatabase() {
 
     abstract fun taskDao(): TaskDao
@@ -23,6 +23,7 @@ abstract class TaskCronometerDatabase : RoomDatabase() {
             // if the Instance is not null, return it, otherwise create a new database instance.
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(content, TaskCronometerDatabase::class.java, "task_database")
+                    .fallbackToDestructiveMigration()
                     .build()
                     .also { Instance = it }
             }

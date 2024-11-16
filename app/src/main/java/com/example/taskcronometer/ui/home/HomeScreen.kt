@@ -46,6 +46,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(factory = TaskCronometerAppViewModelProvider.Factory)
 ) {
     val homeUiState by viewModel.homeUiState.collectAsState()
+    val timersUiState by viewModel.timers.collectAsState()
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     Scaffold(
@@ -64,6 +65,7 @@ fun HomeScreen(
     ) { innerPadding ->
         HomeBody(
             tasks = homeUiState.taskList,
+            timers = timersUiState,
             onDelete = {
                 viewModel.deleteTask(it)
             },
@@ -81,6 +83,7 @@ fun HomeScreen(
 @Composable
 private fun HomeBody(
     tasks: List<Task>,
+    timers: Map<Int, Long>,
     onDelete: (Task) -> Unit,
     onStartTaskTimer: (Task) -> Unit,
     onPauseTaskTimer: (Task) -> Unit,
@@ -99,6 +102,7 @@ private fun HomeBody(
         } else {
             TaskList(
                 tasks = tasks,
+                timers,
                 onDelete = onDelete,
                 onStartTaskTimer = onStartTaskTimer,
                 onPauseTaskTimer = onPauseTaskTimer,
@@ -111,6 +115,7 @@ private fun HomeBody(
 @Composable
 private fun TaskList(
     tasks: List<Task>,
+    timers: Map<Int, Long>,
     onDelete: (Task) -> Unit,
     onStartTaskTimer: (Task) -> Unit,
     onPauseTaskTimer: (Task) -> Unit,
@@ -122,6 +127,7 @@ private fun TaskList(
         items(items = tasks, key = { it.id }) {task ->
             TaskItem(
                 task = task,
+                timer = timers[task.id],
                 onDelete = { onDelete(task) },
                 onStartTaskTimer = { onStartTaskTimer(task) },
                 onPauseTaskTimer = { onPauseTaskTimer(task) }
@@ -147,16 +153,17 @@ private fun FloatingActionButtonHomeScreen(
 @Preview
 @Composable
 fun TaskListPreview() {
-    val task = Task(1, "Trabajar en el projecto TaskCronometer",
-        63000, 63000,true)
-    val task50 = Task(2, "50 caracteres aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        63000, 63000,true)
-    val task100 = Task(3,"100 caracteres aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbfdlkgjdfkljgkfdjkljwklwalkjzjlwkljkdlsas",
-        63000, 63000,true)
+    val task = Task(1, "Work on the project TaskCronometer",
+        63000, 0,true, 0, 0)
+    val task50 = Task(2, "50 characters aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        63000, 0,true, 0, 0)
+    val task100 = Task(3,"100 characters aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbfdlkgjdfkljgkfdjkljwklwalkjzjlwkljkdlsas",
+        63000, 0,true, 0, 0)
     TaskCronometerTheme {
         Surface (color = MaterialTheme.colorScheme.background) {
             TaskList(
                 listOf(task,task50, task100),
+                timers = mapOf(1 to 63000, 2 to 63000, 3 to 63000),
                 onDelete = {},
                 onStartTaskTimer = {},
                 onPauseTaskTimer = {}
@@ -172,6 +179,7 @@ fun HomeBodyPreview() {
         Scaffold { innerPadding ->
             HomeBody(
                 tasks = listOf(),
+                timers = mapOf(),
                 onDelete = { },
                 onStartTaskTimer = {},
                 onPauseTaskTimer = {},

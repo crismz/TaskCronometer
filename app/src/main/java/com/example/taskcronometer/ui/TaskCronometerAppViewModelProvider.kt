@@ -25,7 +25,6 @@ object TaskCronometerAppViewModelProvider {
             HomeViewModel(
                 tasksRepository = taskCronometerApplication().container.tasksRepository,
                 userPreferencesRepository = taskCronometerApplication().userPreferencesRepository,
-                timeValuesRepository = taskCronometerApplication().timeValuesRepository,
                 notificationHelper = NotificationHelper(
                     context = taskCronometerApplication().applicationContext),
                 taskAlarmHelper = TaskAlarmHelper(

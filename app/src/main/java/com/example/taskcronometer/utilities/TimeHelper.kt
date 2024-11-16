@@ -1,12 +1,11 @@
-package com.example.taskcronometer.data
+package com.example.taskcronometer.utilities
 
 import java.util.Locale
 
 /**
- * Singleton to calculate seconds from input of hour,minute and seconds,
- * and obtain from seconds hh:mm:ss string.
+ * Helper used for conversions of time and some calculations
  */
-object ParseTimeLeft {
+object TimeHelper {
 
     fun toMilliSeconds(hour: Int, minute: Int, second: Int = 0): Long {
         return (hour * 3600 + minute * 60 + second) * 1000L
@@ -23,6 +22,20 @@ object ParseTimeLeft {
         val minutes = ((milliSeconds / 1000) % 3600) / 60
         val seconds = ((milliSeconds / 1000) % 3600) % 60
         return String.format(Locale.getDefault(),"%02d:%02d:%02d", hours, minutes, seconds)
+    }
+
+    fun obtainActualTimeRunning(now: Long, timeRunning: Long, lastTimeResumed: Long): Long {
+        val timePass: Long =  now - lastTimeResumed
+        val actualTimeRunning = timeRunning + timePass
+        return actualTimeRunning
+    }
+
+    fun obtainHours(milliSeconds: Long): Int {
+        return ((milliSeconds / 1000) / 3600).toInt()
+    }
+
+    fun obtainMinutes(milliSeconds: Long): Int {
+        return (((milliSeconds / 1000) % 3600) / 60).toInt()
     }
 
 }
